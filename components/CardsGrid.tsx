@@ -13,21 +13,32 @@ type MatchedCards = {
 const CardsGrid = () => {
   const theme = useStore((state) => state.theme);
   const gridSize = useStore((state) => state.gridSize);
+  const reset = useStore((state) => state.reset);
 
   const [cardItems, setCardItems] = useState<(IconType | number)[]>(); // This is holding the cards list
   const [flippedItems, setFlippedItems] = useState<(boolean | null)[]>(
     Array(gridSize).fill(false)
   ); // This is holding the flipped cards list
   const [matchedCardsList, setMatchedCardsList] = useState<MatchedCards[]>([]); // This is holding the matched cards list
+  const [moves, setMoves] = useState<number>(0);
 
   useEffect(() => {
     const newArray = generateCardsArray(theme, gridSize);
     setCardItems(newArray);
   }, [theme, gridSize]);
 
+  useEffect(() => {
+    setFlippedItems(flippedItems.fill(false));
+    setMatchedCardsList([]);
+    setMoves(0);
+  }, [reset]);
+
   // Handle Clicked Card
   const handleClick = (item: IconType | number, index: number) => {
     if (flippedItems[index]) return; // Ignore if already flipped
+    if (matchedCardsList.length === 2) return; // Limit to 2 matched cards at a time
+
+    setMoves(moves + 1);
 
     const newFlipped = [...flippedItems];
     newFlipped[index] = true;
@@ -60,7 +71,7 @@ const CardsGrid = () => {
 
           // Clear the matchedCardsList for the next attempt
           setMatchedCardsList([]);
-        }, 1000); // Wait for 1 second before flipping back
+        }, 1000);
       }
     }
   };
@@ -68,10 +79,10 @@ const CardsGrid = () => {
   return (
     <main>
       <div
-        className={`w-fit grid ${
+        className={`w-[95vw] lg:w-fit grid ${
           gridSize === 16
-            ? "grid-cols-4 grid-rows-4 gap-8"
-            : "grid-cols-6 grid-rows-6 gap-4"
+            ? "grid-cols-4 grid-rows-4 gap-4 lg:gap-8"
+            : "grid-cols-6 grid-rows-6 gap-4 lg:gap-4"
         }`}
       >
         {cardItems &&
@@ -79,7 +90,9 @@ const CardsGrid = () => {
             <div
               key={index}
               className={`relative ${
-                gridSize === 16 ? "w-28 h-28" : "w-24 h-24"
+                gridSize === 16
+                  ? "w-20 lg:w-28 h-20 lg:h-28"
+                  : "w-16 h-16 lg:w-24 lg:h-24"
               } rounded-full cursor-pointer transition-transform duration-500 transform-style-3d ${
                 flippedItems[index] ? "rotate-y-180" : ""
               }`}
@@ -90,7 +103,9 @@ const CardsGrid = () => {
               </div>
               <div className="absolute w-full h-full bg-selectiveYellow text-white flex justify-center items-center rounded-full backface-hidden transform rotate-y-180">
                 {typeof item === "function" ? (
-                  React.createElement(item, { className: "text-[3rem]" })
+                  React.createElement(item, {
+                    className: "text-[2rem] lg:text-[3rem]",
+                  })
                 ) : (
                   <span className="text-[3rem]">{item}</span>
                 )}
@@ -100,7 +115,7 @@ const CardsGrid = () => {
       </div>
       <div className="flex justify-between items-center gap-5 my-10">
         <Timer />
-        <MovesCounter />
+        <MovesCounter moves={moves} />
       </div>
     </main>
   );
